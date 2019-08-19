@@ -13,6 +13,14 @@ import Effect.Class (class MonadEffect)
 import Partial.Unsafe (unsafePartial)
 import Unsafe.Coerce (unsafeCoerce)
 
+runSynchronously :: forall a . Async a -> Effect a
+runSynchronously = runA
+
+wait :: Int -> Async Unit
+wait = waitA
+
+data ForVal a b = Func (a -> b) | Value a
+
 instance asyncFunctor :: Functor Async where
   map f x = bindA x (pureA <<< f)
 
@@ -29,11 +37,6 @@ instance asyncMonad :: Monad Async
 
 instance asyncEffect :: MonadEffect Async where
   liftEffect x = liftEffectA x
-
-wait :: Int -> Async Unit
-wait = waitA
-
-data ForVal a b = Func (a -> b) | Value a
 
 instance parallelAsyncFunctor :: Functor PAsync where
   map f x = pure f <*> x
@@ -53,9 +56,6 @@ instance parallelApply ::  Apply PAsync where
 instance parallelAsync :: Parallel PAsync Async where
   parallel m = unsafeCoerce m
   sequential m = unsafeCoerce m
-
-runSynchronously :: forall a . Async a -> Effect a
-runSynchronously = runA
   
 foreign import data Async :: Type -> Type
 
