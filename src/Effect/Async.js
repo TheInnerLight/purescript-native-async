@@ -3,4 +3,4 @@ exports.runA = {}
 exports.bindA = {}
 exports.waitA = {}
 exports.liftEffectA = {}
-exports.parTraverseA = {}
+exports.parForA = {}

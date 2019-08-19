@@ -64,7 +64,7 @@ exports["waitA"] = [](const boxed& millis_) -> boxed {
   };
 };
 
-exports["parTraverseA"] = [](const boxed& xs_) -> boxed {
+exports["parForA"] = [](const boxed& xs_) -> boxed {
   const auto& xs = unbox<array_t>(xs_);
   return [=](const boxed& f) -> boxed {
     return [=](const boxed& ioservice) -> boxed {
@@ -83,15 +83,9 @@ exports["parTraverseA"] = [](const boxed& xs_) -> boxed {
               return boxed();
             });
           };
-        const auto test = 
-          [=](int i) -> boxed {
-            return box<std::function<boxed(const boxed&)>>([=](const boxed& a) -> boxed {
-              return f(a)(ioservice)(storeResult(i));
-             });
-          };
         int i = 0;
         for (auto it = xs.cbegin(), end = xs.cend(); it != end ; it++, i++) {
-            (*it)(ioservice)(test(i));
+            f(*it)(ioservice)(storeResult(i));
         }
         return boxed();
       };

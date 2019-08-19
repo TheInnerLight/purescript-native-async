@@ -5,6 +5,8 @@
   "depends": [
     "console",
     "effect",
-    "prelude"
+    "parallel",
+    "prelude",
+    "unsafe-coerce"
   ]
 }

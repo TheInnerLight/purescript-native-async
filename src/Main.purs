@@ -3,13 +3,17 @@ module Main where
 import Effect
 import Prelude
 
-import Effect.Async (liftEffectA, parTraverseA, runA, waitA)
+import Control.Parallel (parallel, sequential)
+import Data.Traversable (sequence)
+import Effect.Async (runSynchronously, wait)
+import Effect.Class (liftEffect)
 import Effect.Console (log)
 
 main :: Effect Unit
-main = runA $ do
-  _ <- liftEffectA $ log $ show "Test"
-  x <- parTraverseA [(waitA 50), (waitA 500), (waitA 300)] (\x -> pure "Hello!")
-  _ <- waitA 4
-  liftEffectA $ log ("Hello World " <> show x)
+main = runSynchronously $ do
+  _ <- liftEffect $ log $ show "Test"
+  x <- sequential $ sequence [parallel (wait 50), parallel (wait 500), parallel (wait 300)]
+  y <- sequence [(wait 50), (wait 500), (wait 300)]
+  _ <- liftEffect $ log ("Hello World " <> show x)
+  liftEffect $ log ("Hello World " <> show y)
   
