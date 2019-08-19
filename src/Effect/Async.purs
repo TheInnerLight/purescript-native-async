@@ -3,6 +3,7 @@ module Effect.Async
   , runA
   , waitA
   , liftEffectA
+  , parTraverseA
   ) where
 
 import Prelude
@@ -29,6 +30,8 @@ foreign import pureA :: forall a. a -> Async a
 foreign import liftEffectA :: forall a. Effect a -> Async a
 
 foreign import bindA :: forall a b. Async a -> (a -> Async b) -> Async b
+
+foreign import parTraverseA :: forall a b. Array (Async a) -> (a -> Async b) -> Async (Array b)
 
 foreign import runA :: forall a. Async a -> Effect a
 

@@ -43,14 +43,12 @@ exports["bindA"] = [](const boxed& async) -> boxed {
         const auto test = box<std::function<boxed(const boxed&)>>([=](const boxed& a) -> boxed {
               return f(a)(ioservice)(cb);
           });
-        async(ioservice)(test); // \x -> f x ioservice :: a -> (b -> unit)
+        async(ioservice)(test);
         return boxed();
       };
     };
   };
 };
-
-// ioservice -> (unit -> unit)
 
 exports["waitA"] = [](const boxed& ioservice) -> boxed {
   return [=](const boxed& cb) -> boxed {
@@ -60,6 +58,41 @@ exports["waitA"] = [](const boxed& ioservice) -> boxed {
     timer->expires_after(std::chrono::seconds(5));
     timer->async_wait([=, timer{std::move(timer)}](const boost::system::error_code &ec){ cbfn(boxed()); });
     return boxed();
+  };
+};
+
+exports["parTraverseA"] = [](const boxed& async_array) -> boxed {
+  return [=](const boxed& f) -> boxed {
+    return [=](const boxed& ioservice) -> boxed {
+      return [=](const boxed& cb) -> boxed {
+        const auto& xs = unbox<array_t>(async_array);
+        const auto& cbfn = unbox<std::function<boxed(const boxed&)>>(cb);
+        auto completed_ops = std::make_shared<std::atomic<size_t>>(0);
+        auto results = std::make_shared<array_t>(xs.size());
+        const auto storeResult =
+          [=](int i) -> boxed {
+            return box<std::function<boxed(const boxed&)>>([=](const boxed& a) mutable -> boxed {
+              results->at(i) = a;
+              if(completed_ops->fetch_add(1, std::memory_order_relaxed)+1 == xs.size()) {
+                results->shrink_to_fit();
+                cbfn(*results);
+              }
+              return boxed();
+            });
+          };
+        const auto test = 
+          [=](int i) -> boxed {
+            return box<std::function<boxed(const boxed&)>>([=](const boxed& a) -> boxed {
+              return f(a)(ioservice)(storeResult(i));
+             });
+          };
+        int i = 0;
+        for (auto it = xs.cbegin(), end = xs.cend(); it != end ; it++, i++) {
+            (*it)(ioservice)(test(i));
+        }
+        return boxed();
+      };
+    };
   };
 };
 
