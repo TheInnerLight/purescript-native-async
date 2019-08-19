@@ -35,5 +35,5 @@ foreign import parTraverseA :: forall a b. Array (Async a) -> (a -> Async b) -> 
 
 foreign import runA :: forall a. Async a -> Effect a
 
-foreign import waitA :: Async Unit
+foreign import waitA :: Int -> Async Unit
  

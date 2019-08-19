@@ -50,22 +50,25 @@ exports["bindA"] = [](const boxed& async) -> boxed {
   };
 };
 
-exports["waitA"] = [](const boxed& ioservice) -> boxed {
-  return [=](const boxed& cb) -> boxed {
-    auto& ec = *static_cast<boost::asio::io_service*>(ioservice.get());
-    auto timer = std::make_unique<boost::asio::steady_timer>(ec);
-    const auto& cbfn = unbox<std::function<boxed(const boxed&)>>(cb);
-    timer->expires_after(std::chrono::seconds(5));
-    timer->async_wait([=, timer{std::move(timer)}](const boost::system::error_code &ec){ cbfn(boxed()); });
-    return boxed();
+exports["waitA"] = [](const boxed& millis_) -> boxed {
+  const auto millis = unbox<int>(millis_);
+  return [=](const boxed& ec_) -> boxed {
+    return [=](const boxed& cb) -> boxed {
+      auto& ec = *static_cast<boost::asio::io_service*>(ec_.get());
+      auto timer = std::make_unique<boost::asio::steady_timer>(ec);
+      const auto& cbfn = unbox<std::function<boxed(const boxed&)>>(cb);
+      timer->expires_after(std::chrono::milliseconds(millis));
+      timer->async_wait([=, timer{std::move(timer)}](const boost::system::error_code &ec){ cbfn(boxed()); });
+      return boxed();
+    };
   };
 };
 
-exports["parTraverseA"] = [](const boxed& async_array) -> boxed {
+exports["parTraverseA"] = [](const boxed& xs_) -> boxed {
+  const auto& xs = unbox<array_t>(xs_);
   return [=](const boxed& f) -> boxed {
     return [=](const boxed& ioservice) -> boxed {
       return [=](const boxed& cb) -> boxed {
-        const auto& xs = unbox<array_t>(async_array);
         const auto& cbfn = unbox<std::function<boxed(const boxed&)>>(cb);
         auto completed_ops = std::make_shared<std::atomic<size_t>>(0);
         auto results = std::make_shared<array_t>(xs.size());
