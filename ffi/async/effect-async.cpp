@@ -21,6 +21,16 @@ exports["pureA"] = [](const boxed& a) -> boxed {
   };
 };
 
+exports["liftEffectA"] = [](const boxed& io) -> boxed {
+  return [=](const boxed& ioservice) -> boxed {
+    return [=](const boxed& cb) -> boxed {
+      const auto& cbfn = unbox<std::function<boxed(const boxed&)>>(cb);
+      auto& ec = *static_cast<boost::asio::io_service*>(ioservice.get());
+      return cbfn(io());
+    };
+  };
+};
+
 // async : ioservice -> (a -> unit) -> unit
 // f : a -> ioservice -> (b -> unit) -> unit
 // r: ioservice -> (b -> unit) -> unit
@@ -45,10 +55,10 @@ exports["bindA"] = [](const boxed& async) -> boxed {
 exports["waitA"] = [](const boxed& ioservice) -> boxed {
   return [=](const boxed& cb) -> boxed {
     auto& ec = *static_cast<boost::asio::io_service*>(ioservice.get());
-    boost::asio::steady_timer* timer = new boost::asio::steady_timer(ec);
+    auto timer = std::make_unique<boost::asio::steady_timer>(ec);
     const auto& cbfn = unbox<std::function<boxed(const boxed&)>>(cb);
     timer->expires_after(std::chrono::seconds(5));
-    timer->async_wait([=](const boost::system::error_code &ec){ cbfn(boxed()); });
+    timer->async_wait([=, timer{std::move(timer)}](const boost::system::error_code &ec){ cbfn(boxed()); });
     return boxed();
   };
 };

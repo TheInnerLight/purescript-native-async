@@ -3,11 +3,15 @@ module Main where
 import Effect
 import Prelude
 
-import Effect.Async (pureA, runA, bindA, waitA)
+import Effect.Async (runA, waitA, liftEffectA)
 import Effect.Console (log)
 
 main :: Effect Unit
-main = do
-  x <- runA $ bindA (waitA) (\x -> waitA)
-  log ("Hello World " <> show x)
+main = runA $ do
+  _ <- waitA
+  _ <- liftEffectA $ log $ show "d"
+  x <- waitA
+  _ <- waitA
+  _ <- waitA
+  liftEffectA $ log ("Hello World " <> show x)
   
